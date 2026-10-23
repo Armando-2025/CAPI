@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPI - Suíte Integrada de Inteligência Financeira</title>
+  
+  <!-- Tailwind CSS (Versão Fixada) -->
+  <script src="https://cdn.tailwindcss.com?v=3.4.1"></script>
+  
+  <!-- Lucide Icons (Versão Fixada) -->
+  <script src="https://unpkg.com/lucide@0.344.0"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            pride: ['Cinzel', 'serif'],
+          },
+          colors: {
+            amber: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+    .capi-text-glow { text-shadow: 0 0 12px rgba(251, 191, 36, 0.35); }
+    /* Estilo Toast */
+    #toast-container { transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex overflow-hidden">
+
+  <!-- OVERLAY MOBILE -->
+  <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+  <!-- SIDEBAR NAVEGAÇÃO -->
+  <aside id="sidebar" class="fixed md:relative inset-y-0 left-0 w-64 bg-slate-900 border-r border-amber-500/20 flex flex-col justify-between shrink-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40">
+    <div>
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between md:justify-start gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-amber-500/25 shadow-lg shadow-amber-500/10">
+            <img src="image_d883c4.jpg" id="official-capi-logo" alt="CAPI Logo" class="w-full h-full object-cover" />
+          </div>
+          <div class="overflow-hidden">
+            <h1 class="font-pride font-extrabold text-lg tracking-wider bg-gradient-to-r from-amber-300 via-amber-400 to-orange-500 bg-clip-text text-transparent capi-text-glow">CAPI</h1>
+            <p class="text-[10px] text-slate-400 font-medium whitespace-nowrap">Inteligência Financeira</p>
+          </div>
+        </div>
+        <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white" aria-label="Fechar Menu"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <nav class="p-3 space-y-1 text-xs font-semibold">
+        <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider py-2">Módulos Hackathon</p>
+        <button onclick="navigatePage('page-cashflow')" id="btn-nav-cashflow" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-md transition-all text-left">
+          <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0"></i><span class="truncate">1. Entradas &amp; Saídas</span>
+        </button>
+        <button onclick="navigatePage('page-audit')" id="btn-nav-audit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i><span class="truncate">2. Conferência &amp; Auditoria</span>
+        </button>
+        <button onclick="navigatePage('page-projection')" id="btn-nav-projection" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="line-chart" class="w-4 h-4 shrink-0"></i><span class="truncate">3. Projeção de Cenários</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="p-3 border-t border-slate-800 space-y-2">
+      <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-[11px] text-slate-300 font-medium">Banco DB Active</span>
+        </div>
+        <button onclick="openDatabaseModal()" class="text-[10px] text-amber-400 font-bold hover:underline">SQL Schema</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden w-full relative">
+    
+    <!-- Topbar -->
+    <header class="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur px-4 sm:px-6 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800 border border-slate-700 md:hidden" aria-label="Abrir Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <h2 id="topbar-title" class="font-pride text-sm sm:text-base font-bold text-slate-100 truncate">Página 1: Fluxo de Caixa</h2>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <button onclick="toggleAgentChat()" class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i><span class="hidden sm:inline">Agente IA</span>
+        </button>
+        <div class="w-8 h-8 rounded-full bg-slate-800 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-xs" title="Capi Varejo S/A">CP</div>
+      </div>
+    </header>
+
+    <!-- Conteúdo Dinâmico -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 relative">
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 1: FLUXO DE CAIXA (DESAFIO 13)                     -->
+      <!-- ========================================================= -->
+      <section id="page-cashflow" class="space-y-6">
+        <div class="flex flex-col md:flex-row justify-between gap-4 border-b border-amber-500/20 pb-4">
+          <div>
+            <h3 class="text-sm font-bold text-amber-400 font-pride flex items-center gap-2"><i data-lucide="arrow-left-right" class="w-4 h-4"></i> Módulo Operacional: Caixa a Termo</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Controle diário de saldo. Altere as previsões para analisar impactos na liquidez.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Saldo Inicial Editável -->
+            <div class="bg-slate-900 border border-slate-700 rounded-lg flex items-center px-2 py-1 gap-2">
+              <span class="text-[10px] text-slate-400 font-bold uppercase">Saldo Inicial:</span>
+              <span class="text-xs text-slate-300">R$</span>
+              <input type="number" id="cash-initial-balance" value="15000" onchange="initCashData()" class="bg-transparent border-none text-emerald-400 text-xs font-bold w-20 focus:outline-none focus:ring-0 appearance-none">
+            </div>
+
+            <label class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg transition cursor-pointer flex items-center gap-2">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Importar CSV
+              <input type="file" accept=".csv" class="hidden" onchange="uploadCSV(event)">
+            </label>
+            <button onclick="simularAtrasoPitch()" class="px-3 py-1.5 text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition flex items-center gap-2">
+              <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i> Simular Atraso (Pitch)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div class="md:col-span-8 space-y-4">
+            <!-- Alerta visual de déficit (Isolado e fixo estruturalmente) -->
+            <div id="cash-deficit-alert" class="hidden bg-rose-950/40 border border-rose-500/40 text-rose-300 p-3 rounded-xl flex items-start gap-3">
+              <i data-lucide="siren" class="w-5 h-5 mt-0.5 text-rose-400"></i>
+              <div>
+                <strong class="text-sm block text-rose-400 font-pride">Alerta Crítico: Projeção de Caixa Negativo</strong>
+                <p class="text-xs">O diferimento de datas resultará em saldo descoberto na conta corrente operacional nos próximos dias.</p>
+              </div>
+            </div>
+
+            <!-- Tabela de Caixa -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl max-h-[500px] overflow-y-auto">
+              <table class="w-full text-left text-xs text-slate-300 relative">
+                <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0 z-10">
+                  <tr>
+                    <th class="py-3 px-4">Contrato</th>
+                    <th class="py-3 px-4">Data Prevista</th>
+                    <th class="py-3 px-4">Histórico</th>
+                    <th class="py-3 px-4 text-right">Valor</th>
+                    <th class="py-3 px-4 text-right bg-slate-900/50">Saldo Acumulado</th>
+                  </tr>
+                </thead>
+                <tbody id="cash-tbody" class="divide-y divide-slate-800/60 font-mono">
+                  <!-- Injetado -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="md:col-span-4 space-y-4 flex flex-col">
+            <!-- KPIs -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+              <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Total de Entradas</p>
+              <h4 id="cash-tot-in" class="text-lg font-bold text-emerald-400 mb-3">R$ 0,00</h4>
+              <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Total de Saídas</p>
+              <h4 id="cash-tot-out" class="text-lg font-bold text-rose-400 mb-3">R$ 0,00</h4>
+              <div class="h-px w-full bg-slate-800 my-3"></div>
+              <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Saldo Final Projetado</p>
+              <h4 id="cash-final-projected" class="text-2xl font-bold text-sky-400">R$ 0,00</h4>
+            </div>
+
+            <!-- Gráfico de Linha Chart.js -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex-1 flex flex-col min-h-[220px]">
+               <h4 class="text-xs font-bold text-amber-400 font-pride mb-2">Evolução do Saldo Projetado</h4>
+               <div class="flex-1 relative w-full h-full">
+                 <canvas id="cashChart"></canvas>
+               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 2: CONFERÊNCIA E AUDITORIA (DESAFIO 14 - 100 REGS)  -->
+      <!-- ========================================================= -->
+      <section id="page-audit" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
+          <div>
+            <h3 class="text-sm font-bold text-amber-400 font-pride flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-4 h-4"></i> Auditoria Guiada & Compliance
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Base com exatamente 100 registros. Detecção dinâmica de Duplicidade, > R$5k e Dados Ausentes.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+            <span class="text-[11px] text-amber-400 font-bold px-2">Testar Filtros Regras:</span>
+            <button onclick="pitchDemo('DUPLICATE')" class="px-2.5 py-1 text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg">Duplicidade</button>
+            <button onclick="pitchDemo('HIGH_VALUE')" class="px-2.5 py-1 text-[10px] font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg">> R$ 5k</button>
+            <button onclick="pitchDemo('MISSING_INFO')" class="px-2.5 py-1 text-[10px] font-semibold bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg">Dado Ausente</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex justify-between">
+            <div><p class="text-[10px] text-slate-400 uppercase">Base</p><h4 class="text-xl font-bold text-slate-100">100 regs</h4></div>
+          </div>
+          <div class="bg-slate-900 border border-amber-500/30 p-4 rounded-2xl flex justify-between">
+            <div><p class="text-[10px] text-amber-400 uppercase">Alertas</p><h4 id="kpi-flagged-count" class="text-xl font-bold text-amber-400">0</h4></div>
+          </div>
+          <div class="bg-slate-900 border border-emerald-500/30 p-4 rounded-2xl flex justify-between">
+            <div><p class="text-[10px] text-emerald-400 uppercase">Autorizados</p><h4 id="kpi-reviewed-count" class="text-xl font-bold text-emerald-400">0</h4></div>
+          </div>
+          <div class="bg-slate-900 border border-rose-500/30 p-4 rounded-2xl flex justify-between">
+            <div><p class="text-[10px] text-rose-400 uppercase">Reprovados</p><h4 id="kpi-rejected-count" class="text-xl font-bold text-rose-400">0</h4></div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div class="relative flex-1 w-full">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+            <input type="text" id="audit-search" oninput="filterAuditData(true)" placeholder="Buscar fornecedor, valor..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="flex gap-2 w-full md:w-auto">
+            <select id="audit-rule-filter" onchange="filterAuditData(true)" class="bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2">
+              <option value="ALL">Todas as Regras</option>
+              <option value="DUPLICATE">Duplicidade</option>
+              <option value="HIGH_VALUE">Valores > R$ 5k</option>
+              <option value="MISSING_INFO">Ausência Documento</option>
+              <option value="OK">Sem Inconsistência</option>
+            </select>
+            <select id="audit-status-filter" onchange="filterAuditData(true)" class="bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2">
+              <option value="ALL">Todos os Status</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Autorizado">Autorizado</option>
+              <option value="Reprovado">Reprovado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabela Auditoria -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Lançamento</th>
+                  <th class="py-3 px-4">Favorecido</th>
+                  <th class="py-3 px-4 text-right">Valor</th>
+                  <th class="py-3 px-4">Alerta Detetado</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-center">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody" class="divide-y divide-slate-800/60 font-mono">
+                <!-- JS Inject -->
+              </tbody>
+            </table>
+          </div>
+          <div class="bg-slate-950 px-4 py-3 border-t border-slate-800 flex items-center justify-between text-xs">
+            <div class="text-slate-400">Exibindo <span id="audit-page-start" class="font-bold">0</span> a <span id="audit-page-end" class="font-bold">0</span> de <span id="audit-page-total" class="font-bold">100</span></div>
+            <div class="flex items-center gap-2">
+              <button id="btn-audit-prev" onclick="changeAuditPage(-1)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded">Ant</button>
+              <span id="audit-page-current" class="font-bold text-amber-400 px-2">Pág 1</span>
+              <button id="btn-audit-next" onclick="changeAuditPage(1)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded">Próx</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- PÁGINA 3: PROJEÇÃO E SIMULADOR (DESAFIO 15)                 -->
+      <!-- ========================================================= -->
+      <section id="page-projection" class="hidden space-y-6">
+        <div class="flex flex-col md:flex-row justify-between gap-4 border-b border-amber-500/20 pb-4">
+          <div>
+            <h3 class="text-sm font-bold text-amber-400 font-pride flex items-center gap-2"><i data-lucide="line-chart" class="w-4 h-4"></i> Simulador de Cenários & Break-even</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Definição paramétrica de custos e simulação de rentabilidade e ponto de equilíbrio.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Inputs Paramétricos -->
+          <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Premissas do Negócio</h4>
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Preço Venda Unit. (R$)</label>
+                <input type="number" id="sim-price" value="150" oninput="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Custo Variável Unit. (CVU) (R$)</label>
+                <input type="number" id="sim-cvu" value="70" oninput="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Custo Fixo Mensal (R$)</label>
+                <input type="number" id="sim-cf" value="25000" oninput="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Volume Previsto (Mês)</label>
+                <input type="number" id="sim-qty" value="800" oninput="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+              </div>
+            </div>
+            
+            <hr class="border-slate-800 my-4">
+            
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Filtros de Sensibilidade</h4>
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Horizonte Temporal</label>
+                <select id="proj-filter-horizon" onchange="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+                  <option value="1">1 Mês (Curto Prazo)</option>
+                  <option value="6">6 Meses (Semestral)</option>
+                  <option value="12">12 Meses (Anual)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Inflação em Custos (Variáveis e Fixos)</label>
+                <select id="proj-filter-impact" onchange="recalculaSimulador()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-amber-500 outline-none">
+                  <option value="LOW">1.0x (Cenário Estável)</option>
+                  <option value="MED">1.05x (+5% Moderado)</option>
+                  <option value="HIGH">1.12x (+12% Severo)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Aviso Margem Inviável -->
+            <div id="sim-alert-margin" class="hidden mt-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-[10px] font-bold">
+              <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i> Preço inferior ou igual ao custo variável (Margem Negativa). Ponto de equilíbrio inviável.
+            </div>
+          </div>
+
+          <!-- Cards dos 3 Cenários -->
+          <div class="lg:col-span-8 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- Pessimista -->
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group">
+                <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                <h4 class="text-xs font-bold text-rose-400 uppercase pl-2 mb-3">Pessimista<br><span class="text-[9px] font-normal text-slate-500">-15% Vendas</span></h4>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between"><span class="text-slate-400">Receita:</span><span id="pes-rec" class="font-mono text-slate-200">0</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Custos:</span><span id="pes-cost" class="font-mono text-slate-200">0</span></div>
+                  <div class="h-px bg-slate-800 my-1"></div>
+                  <div class="flex justify-between font-bold"><span class="text-slate-400">Lucro:</span><span id="pes-profit" class="font-mono text-rose-400">0</span></div>
+                  <div class="flex justify-between mt-2 pt-2 border-t border-slate-800/50">
+                    <span class="text-[10px] text-slate-500 uppercase">Break-even:</span>
+                    <span id="pes-be" class="font-mono text-amber-200/70 font-bold">0 un/mês</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Base -->
+              <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 flex flex-col justify-between relative shadow-lg shadow-amber-500/5">
+                <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                <h4 class="text-xs font-bold text-amber-400 uppercase pl-2 mb-3">Cenário Base<br><span class="text-[9px] font-normal text-slate-500">Sem variações na Venda</span></h4>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between"><span class="text-slate-400">Receita:</span><span id="base-rec" class="font-mono text-slate-200">0</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Custos:</span><span id="base-cost" class="font-mono text-slate-200">0</span></div>
+                  <div class="h-px bg-slate-800 my-1"></div>
+                  <div class="flex justify-between font-bold"><span class="text-slate-400">Lucro:</span><span id="base-profit" class="font-mono text-amber-400">0</span></div>
+                  <div class="flex justify-between mt-2 pt-2 border-t border-slate-800/50">
+                    <span class="text-[10px] text-slate-500 uppercase">Break-even:</span>
+                    <span id="base-be" class="font-mono text-amber-200/70 font-bold">0 un/mês</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Otimista -->
+              <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between relative">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <h4 class="text-xs font-bold text-emerald-400 uppercase pl-2 mb-3">Otimista<br><span class="text-[9px] font-normal text-slate-500">+10% Qtd e +5% Preço</span></h4>
+                <div class="space-y-1 text-xs">
+                  <div class="flex justify-between"><span class="text-slate-400">Receita:</span><span id="oti-rec" class="font-mono text-slate-200">0</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">Custos:</span><span id="oti-cost" class="font-mono text-slate-200">0</span></div>
+                  <div class="h-px bg-slate-800 my-1"></div>
+                  <div class="flex justify-between font-bold"><span class="text-slate-400">Lucro:</span><span id="oti-profit" class="font-mono text-emerald-400">0</span></div>
+                  <div class="flex justify-between mt-2 pt-2 border-t border-slate-800/50">
+                    <span class="text-[10px] text-slate-500 uppercase">Break-even:</span>
+                    <span id="oti-be" class="font-mono text-amber-200/70 font-bold">0 un/mês</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gráfico Barras Comparativo -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex-1 mt-4">
+              <h4 class="text-xs font-bold text-slate-300 font-sans mb-2 uppercase">Comparativo: Receita vs Custos vs Lucro</h4>
+              <div class="w-full h-[220px] relative">
+                <canvas id="scenarioChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL DE AUDITORIA MANUAL (Com Capi AI)  -->
+  <!-- ========================================== -->
+  <div id="modal-audit-item" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div onclick="closeAuditItemModal()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+    <div class="relative bg-slate-900 border border-amber-500/40 rounded-2xl max-w-xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+          <div>
+            <h4 class="text-base font-bold text-amber-400 font-pride">Auditoria Manual</h4>
+            <p class="text-[11px] text-slate-400">Comente e decida o status com apoio da IA.</p>
+          </div>
+        </div>
+        <button onclick="closeAuditItemModal()" class="text-slate-400 hover:text-white" aria-label="Fechar Modal"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="overflow-y-auto py-4 space-y-4 flex-1 custom-scroll">
+        <!-- Detalhes Frios -->
+        <div class="grid grid-cols-2 gap-3 text-[11px] bg-slate-950 p-4 rounded-xl border border-slate-800 font-sans">
+          <div><span class="text-slate-500 block">ID:</span><strong id="audit-modal-id" class="text-amber-400 font-mono">---</strong></div>
+          <div><span class="text-slate-500 block">Valor:</span><strong id="audit-modal-val" class="text-slate-100 font-mono">R$ 0,00</strong></div>
+          <div><span class="text-slate-500 block">Favorecido:</span><span id="audit-modal-env" class="text-slate-200 break-all">---</span></div>
+          <div><span class="text-slate-500 block">Documento:</span><span id="audit-modal-doc" class="text-slate-200">---</span></div>
+          <div class="col-span-2 mt-2 pt-2 border-t border-slate-800"><span class="text-slate-500 block mb-1">Motivo do Alerta:</span><span id="audit-modal-rule" class="font-bold text-[12px] bg-slate-900 px-2 py-1 rounded inline-block border border-slate-700">---</span></div>
+        </div>
+
+        <!-- Explicação da IA Resumida -->
+        <div class="bg-amber-950/20 border border-amber-500/20 rounded-xl p-3">
+          <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="bot" class="w-4 h-4 text-amber-400"></i><span class="font-bold text-amber-400 text-xs">Capi AI - Orientação Expressa</span>
+          </div>
+          <div id="audit-modal-loading" class="text-amber-400/60 font-medium py-2 text-xs flex items-center gap-2 animate-pulse">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processando contexto da regra...
+          </div>
+          <p id="audit-modal-text" class="hidden text-slate-300 text-[11px] leading-relaxed"></p>
+        </div>
+
+        <!-- Observação Humana -->
+        <div>
+          <label class="block text-[11px] text-slate-400 font-semibold mb-1">Observação do Auditor (Obrigatório para reprovar):</label>
+          <textarea id="audit-modal-obs" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-none" placeholder="Justifique a decisão com base na nota física analisada..."></textarea>
+        </div>
+      </div>
+
+      <!-- Decisão -->
+      <div class="pt-4 border-t border-slate-800 shrink-0">
+        <div class="flex gap-3">
+          <button id="audit-btn-approve" onclick="" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-bold text-xs transition flex justify-center items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i> AUTORIZAR
+          </button>
+          <button id="audit-btn-reject" onclick="" class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition flex justify-center items-center gap-1.5 shadow-lg shadow-rose-500/20">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> REPROVAR
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 transform translate-x-[150%] opacity-0 bg-emerald-900/90 border border-emerald-500 text-emerald-100 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-sm font-semibold"></span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SCRIPTS JS -->
+  <!-- ========================================== -->
+  <script>
+    lucide.createIcons();
+
+    // Utilitários de Segurança e Formatação
+    const escapeHTML = str => String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match]));
+    const fmtBRL = val => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    
+    function showToast(msg) {
+      const el = document.getElementById('toast-container');
+      document.getElementById('toast-msg').textContent = msg;
+      el.classList.remove('translate-x-[150%]', 'opacity-0');
+      setTimeout(() => el.classList.add('translate-x-[150%]', 'opacity-0'), 3000);
+    }
+
+    // Fechar modais com tecla ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAuditItemModal();
+        if(typeof closeDatabaseModal === 'function') closeDatabaseModal();
+      }
+    });
+
+    // ==========================================
+    // ESTADO E LÓGICA DE DADOS (100 REGISTROS - DESAFIO 14)
+    // ==========================================
+    let auditData = [];
+    let auditCurrentPage = 1;
+    const auditPageSize = 12;
+    let savedAudits = JSON.parse(localStorage.getItem('capiAudits')) || {}; // Persistência local
+
+    // Gerador de dados determinístico básico
+    function sRandom(seed) {
+        var x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+
+    function init100AuditData() {
+      auditData = [];
+      const f = ['TechCorp Soluções', 'LogiExpress S.A.', 'Grafica Alfa', 'Consultoria Prisma'];
+      
+      for (let i = 1; i <= 100; i++) {
+        let item = {
+          id: `MOV-${1000 + i}`,
+          data: `2026-10-${String(Math.floor(sRandom(i)*28)+1).padStart(2,'0')}`,
+          envolvido: f[i % f.length],
+          doc: `${Math.floor(sRandom(i+1)*89+10)}.000.000/0001-${Math.floor(sRandom(i+2)*89+10)}`,
+          valor: parseFloat((sRandom(i+3) * 1200 + 150).toFixed(2)),
+          regra: 'OK',
+          status: 'Pendente',
+          observacao: ''
+        };
+        
+        // Injeção de "Amostras" para garantir as falhas caso a pseudo-aleatoriedade falhe
+        if (i === 10) item.valor = 6500.00; // Força regra 2
+        if (i === 20) item.doc = ''; // Força regra 3
+        if (i === 30 || i === 31) { 
+           // Força regra 1 (Duplicidade exata)
+           item.data = '2026-10-15';
+           item.envolvido = 'TechCorp Duplicada';
+           item.doc = '11.111.111/0001-11';
+           item.valor = 1200.50;
+        }
+
+        auditData.push(item);
+      }
+      
+      aplicarMotorDeRegras(auditData);
+
+      // Mescla com os dados salvos em localStorage (Persistência)
+      auditData.forEach(item => {
+         if (savedAudits[item.id]) {
+            item.status = savedAudits[item.id].status;
+            item.observacao = savedAudits[item.id].observacao;
+         }
+      });
+    }
+
+    // Função vital: Avaliação matemática e lógica das 3 regras do Hackathon
+    function aplicarMotorDeRegras(dados) {
+       let hashCheck = {};
+       dados.forEach(item => {
+           item.regra = 'OK';
+           // 1. Ausência de Doc
+           if (!item.doc || item.doc.trim() === '') item.regra = 'MISSING_INFO';
+           
+           // 2. Valor Alto
+           else if (item.valor > 5000) item.regra = 'HIGH_VALUE';
+           
+           // 3. Duplicidade (Mesmo doc, data e valor)
+           let k = `${item.doc}_${item.data}_${item.valor}`;
+           if (hashCheck[k]) {
+               item.regra = 'DUPLICATE';
+               hashCheck[k].regra = 'DUPLICATE'; // Marca o irmão também
+           } else {
+               hashCheck[k] = item;
+           }
+       });
+    }
+
+    function filterAuditData(resetPage = false) {
+      if (resetPage) auditCurrentPage = 1;
+      
+      const sText = document.getElementById('audit-search').value.toLowerCase();
+      const sRule = document.getElementById('audit-rule-filter').value;
+      const sStatus = document.getElementById('audit-status-filter').value;
+
+      const filtered = auditData.filter(item => {
+        const textMatch = item.id.toLowerCase().includes(sText) || item.envolvido.toLowerCase().includes(sText) || item.doc.toLowerCase().includes(sText);
+        const ruleMatch = (sRule === 'ALL') || (item.regra === sRule);
+        const statusMatch = (sStatus === 'ALL') || (item.status === sStatus);
+        return textMatch && ruleMatch && statusMatch;
+      });
+
+      let flagC = 0, revC = 0, rejC = 0;
+      auditData.forEach(i => {
+        if (i.regra !== 'OK') flagC++;
+        if (i.status === 'Autorizado') revC++;
+        if (i.status === 'Reprovado') rejC++;
+      });
+      document.getElementById('kpi-flagged-count').innerText = flagC;
+      document.getElementById('kpi-reviewed-count').innerText = revC;
+      document.getElementById('kpi-rejected-count').innerText = rejC;
+
+      renderAuditTable(filtered);
+    }
+
+    function renderAuditTable(items) {
+      const tbody = document.getElementById('audit-tbody');
+      tbody.innerHTML = '';
+
+      const total = items.length;
+      const tPages = Math.ceil(total / auditPageSize) || 1;
+      if (auditCurrentPage > tPages) auditCurrentPage = tPages;
+
+      const start = (auditCurrentPage - 1) * auditPageSize;
+      const paginated = items.slice(start, start + auditPageSize);
+
+      paginated.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/30";
+
+        let tag = '<span class="text-slate-600">-</span>';
+        if (item.regra === 'DUPLICATE') tag = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Duplicidade</span>';
+        if (item.regra === 'HIGH_VALUE') tag = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">> R$ 5k</span>';
+        if (item.regra === 'MISSING_INFO') tag = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">Sem Doc</span>';
+
+        let st = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700/50 text-slate-300 border border-slate-600">Pendente</span>';
+        if (item.status === 'Autorizado') st = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Autorizado</span>';
+        if (item.status === 'Reprovado') st = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Reprovado</span>';
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-4"><span class="text-amber-400 font-bold">${item.id}</span><br><span class="text-[10px] text-slate-500">${item.data}</span></td>
+          <td class="py-2.5 px-4"><span class="text-slate-200 font-sans font-medium truncate block max-w-[150px]">${item.envolvido}</span><span class="text-[10px] text-slate-400 font-mono">${item.doc || '<span class="text-rose-400 italic">Ausente</span>'}</span></td>
+          <td class="py-2.5 px-4 text-right font-bold text-slate-100">${fmtBRL(item.valor)}</td>
+          <td class="py-2.5 px-4">${tag}</td>
+          <td class="py-2.5 px-4">${st}</td>
+          <td class="py-2.5 px-4 text-center">
+            <button onclick="abrirAuditoriaGuiada('${item.id}')" class="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow transition flex items-center justify-center gap-1.5 mx-auto">
+              Auditar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('audit-page-start').innerText = total > 0 ? start + 1 : 0;
+      document.getElementById('audit-page-end').innerText = Math.min(start + auditPageSize, total);
+      document.getElementById('audit-page-total').innerText = total;
+      document.getElementById('audit-page-current').innerText = `Pág ${auditCurrentPage}`;
+
+      document.getElementById('btn-audit-prev').disabled = auditCurrentPage <= 1;
+      document.getElementById('btn-audit-next').disabled = auditCurrentPage >= tPages;
+    }
+
+    // Modal Guiado
+    function abrirAuditoriaGuiada(id) {
+      const item = auditData.find(x => x.id === id);
+      if(!item) return;
+
+      const modal = document.getElementById('modal-audit-item');
+      document.getElementById('audit-modal-id').innerText = `${item.id} (${item.data})`;
+      document.getElementById('audit-modal-val').innerText = fmtBRL(item.valor);
+      document.getElementById('audit-modal-env').innerText = item.envolvido;
+      document.getElementById('audit-modal-doc').innerText = item.doc || 'Vazio/Não Informado';
+      document.getElementById('audit-modal-obs').value = item.observacao || '';
+
+      let rLabel = 'Nenhuma inconsistência lógica. Liberação padrão.';
+      let aiText = "Sem anomalias. Para Autorizar, basta clicar no botão verde. Caso discorde da nota, insira a observação e Reprove.";
+      
+      if(item.regra === 'DUPLICATE') {
+         rLabel = '⚠️ Regra 1: Possível Duplicidade';
+         aiText = "Identifiquei outra transação com o mesmo documento, valor e data. Se o comprovante físico confirmar que é apenas um registro acidental duplo, clique em REPROVAR para estornar. Se forem duas compras reais diferentes, clique em AUTORIZAR.";
+      }
+      if(item.regra === 'HIGH_VALUE') {
+         rLabel = '⚠️ Regra 2: Valor Crítico (> R$5k)';
+         aiText = "Transações acima de R$ 5.000,00 exigem chancela. Confirme se há contrato assinado anexado à nota fiscal. Se sim, clique em AUTORIZAR. Caso contrário, adicione a justificativa e clique em REPROVAR.";
+      }
+      if(item.regra === 'MISSING_INFO') {
+         rLabel = '⚠️ Regra 3: Falta de CPF/CNPJ';
+         aiText = "O compliance exige identificação fiscal. Se o fornecedor atualizou o cadastro e a nota é válida, clique em AUTORIZAR. Se o cadastro segue irregular, preencha a observação e clique em REPROVAR.";
+      }
+
+      document.getElementById('audit-modal-rule').innerText = rLabel;
+      
+      // Simula tempo de resposta da IA
+      document.getElementById('audit-modal-text').classList.add('hidden');
+      document.getElementById('audit-modal-loading').classList.remove('hidden');
+      setTimeout(() => {
+         document.getElementById('audit-modal-loading').classList.add('hidden');
+         const txtEl = document.getElementById('audit-modal-text');
+         txtEl.innerText = aiText;
+         txtEl.classList.remove('hidden');
+      }, 600);
+
+      // Ações com Salvamento Local
+      document.getElementById('audit-btn-approve').onclick = () => salvarAuditoria(item, 'Autorizado');
+      document.getElementById('audit-btn-reject').onclick = () => salvarAuditoria(item, 'Reprovado');
+
+      modal.classList.remove('hidden');
+    }
+
+    function salvarAuditoria(item, novoStatus) {
+      const obs = document.getElementById('audit-modal-obs').value.trim();
+      if(novoStatus === 'Reprovado' && obs === '') {
+         alert('Para REPROVAR uma transação, é obrigatório preencher a Observação do Auditor.');
+         return;
+      }
+      
+      item.status = novoStatus;
+      item.observacao = escapeHTML(obs);
+      
+      // Atualiza banco persistente no localStorage
+      savedAudits[item.id] = { status: item.status, observacao: item.observacao };
+      localStorage.setItem('capiAudits', JSON.stringify(savedAudits));
+      
+      filterAuditData();
+      closeAuditItemModal();
+    }
+
+    function closeAuditItemModal() { document.getElementById('modal-audit-item').classList.add('hidden'); }
+    function changeAuditPage(dir) { auditCurrentPage += dir; filterAuditData(); }
+    
+    function pitchDemo(regra) {
+      navigatePage('page-audit');
+      document.getElementById('audit-rule-filter').value = regra;
+      document.getElementById('audit-status-filter').value = 'ALL';
+      filterAuditData(true);
+    }
+
+    // ==========================================
+    // FLUXO DE CAIXA E CHARTS (DESAFIO 13)
+    // ==========================================
+    let cashData = [];
+    let cashChartInst = null;
+    let scenChartInst = null;
+
+    function initCashData() {
+      const initBal = parseFloat(document.getElementById('cash-initial-balance').value) || 0;
+      
+      if(cashData.length === 0) { // Cria falso histórico apenas se não houver dados
+        const desc = ['Venda PDV', 'Pgto Aluguel', 'Fornecedor X', 'Recebimento Cartões', 'Impostos'];
+        for (let i = 1; i <= 30; i++) {
+          cashData.push({
+            id: i,
+            contractDate: `2026-10-${String(i).padStart(2,'0')}`,
+            prevDate: `2026-10-${String(i).padStart(2,'0')}`,
+            desc: desc[i%desc.length],
+            tipo: (i%3===0) ? 'SAIDA' : 'ENTRADA',
+            valor: parseFloat((sRandom(i)*1800+300).toFixed(2))
+          });
+        }
+      }
+      renderCashTable();
+    }
+
+    function uploadCSV(event) {
+       const file = event.target.files[0];
+       if(!file) return;
+       
+       const reader = new FileReader();
+       reader.onload = function(e) {
+          const lines = e.target.result.split('\n');
+          let novos = [];
+          lines.slice(1).forEach((line, idx) => {
+             const c = line.split(',');
+             if(c.length >= 4 && c[0].trim()) {
+                novos.push({
+                   id: 9999 + idx,
+                   contractDate: escapeHTML(c[0].trim()),
+                   prevDate: escapeHTML(c[0].trim()),
+                   desc: escapeHTML(c[1].trim()),
+                   tipo: c[2].toUpperCase().includes('SAI') ? 'SAIDA' : 'ENTRADA',
+                   valor: parseFloat(c[3].trim()) || 0
+                });
+             }
+          });
+          if(novos.length > 0) {
+             cashData = novos;
+             renderCashTable();
+             showToast(`CSV "${escapeHTML(file.name)}" importado via FileReader!`);
+          } else {
+             alert('Formato de CSV inválido. Use: Data,Descricao,Tipo,Valor');
+          }
+       };
+       reader.readAsText(file);
+    }
+
+    function simularAtrasoPitch() {
+       // Acha a maior entrada e joga pro final
+       if(cashData.length === 0) return;
+       let maxE = null;
+       cashData.forEach(i => { if(i.tipo==='ENTRADA' && (!maxE || i.valor > maxE.valor)) maxE = i; });
+       if(maxE) {
+         maxE.prevDate = '2026-10-31';
+         renderCashTable();
+         showToast(`Atraso simulado na maior receita (R$ ${maxE.valor}) para o fim do mês.`);
+       }
+    }
+
+    function renderCashTable() {
+      const tbody = document.getElementById('cash-tbody');
+      tbody.innerHTML = '';
+
+      // Ordena por data prevista
+      cashData.sort((a, b) => new Date(a.prevDate) - new Date(b.prevDate));
+
+      let totIn = 0, totOut = 0;
+      let runBal = parseFloat(document.getElementById('cash-initial-balance').value) || 0;
+      let hasDeficit = false;
+      let chartLabels = [], chartData = [];
+
+      cashData.forEach(item => {
+        if (item.tipo === 'ENTRADA') totIn += item.valor; else totOut += item.valor;
+        runBal += (item.tipo === 'ENTRADA' ? item.valor : -item.valor);
+        if (runBal < 0) hasDeficit = true;
+
+        chartLabels.push(item.prevDate.substring(8,10)); // Só o dia
+        chartData.push(runBal);
+
+        const tr = document.createElement('tr');
+        tr.className = runBal < 0 ? "bg-rose-950/30 hover:bg-rose-900/40" : "hover:bg-slate-800/40";
+        tr.innerHTML = `
+          <td class="py-2.5 px-4 text-slate-400 font-mono text-[10px]">${item.contractDate}</td>
+          <td class="py-2.5 px-4">
+            <input type="date" value="${item.prevDate}" onchange="updateCashDate(${item.id}, this.value)" class="bg-slate-950 border border-slate-700 text-slate-200 px-2 py-1 rounded text-[11px] focus:border-amber-500 focus:outline-none">
+          </td>
+          <td class="py-2.5 px-4 text-slate-200 truncate max-w-[140px]">${item.desc}</td>
+          <td class="py-2.5 px-4 text-right font-bold font-mono ${item.tipo === 'ENTRADA' ? 'text-emerald-400' : 'text-rose-400'}">
+            ${item.tipo === 'ENTRADA' ? '+' : '-'} ${fmtBRL(item.valor)}
+          </td>
+          <td class="py-2.5 px-4 text-right font-bold font-mono bg-slate-900/50 ${runBal < 0 ? 'text-rose-400' : 'text-sky-400'}">
+            ${fmtBRL(runBal)}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('cash-tot-in').innerText = fmtBRL(totIn);
+      document.getElementById('cash-tot-out').innerText = fmtBRL(totOut);
+      document.getElementById('cash-final-projected').innerText = fmtBRL(runBal);
+
+      const alertBox = document.getElementById('cash-deficit-alert');
+      if (hasDeficit) alertBox.classList.remove('hidden'); else alertBox.classList.add('hidden');
+
+      atualizarCashChart(chartLabels, chartData);
+    }
+
+    function updateCashDate(id, newDate) {
+      const item = cashData.find(x => x.id === id);
+      if (item && newDate) { item.prevDate = newDate; renderCashTable(); }
+    }
+
+    function atualizarCashChart(labels, data) {
+       const ctx = document.getElementById('cashChart');
+       if(!ctx) return;
+       if(cashChartInst) cashChartInst.destroy();
+
+       // Define as cores (se negativo fica vermelho, se positivo azul)
+       const pointColors = data.map(v => v < 0 ? '#f43f5e' : '#38bdf8');
+       
+       cashChartInst = new Chart(ctx, {
+          type: 'line',
+          data: {
+             labels: labels,
+             datasets: [{
+                label: 'Saldo Diário (R$)',
+                data: data,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: pointColors,
+                pointRadius: 3,
+                fill: true,
+                tension: 0.2
+             }]
+          },
+          options: {
+             responsive: true, maintainAspectRatio: false,
+             scales: {
+                x: { ticks: { color: '#64748b', font: {size: 9} }, grid: { display:false } },
+                y: { ticks: { color: '#64748b', font: {size: 9} }, grid: { color: '#1e293b' } }
+             },
+             plugins: { legend: { display: false } }
+          }
+       });
+    }
+
+    // ==========================================
+    // SIMULADOR (DESAFIO 15)
+    // ==========================================
+    function recalculaSimulador() {
+      const price = parseFloat(document.getElementById('sim-price').value) || 0;
+      const qty = parseFloat(document.getElementById('sim-qty').value) || 0;
+      const cvuBase = parseFloat(document.getElementById('sim-cvu').value) || 0;
+      const cfBase = parseFloat(document.getElementById('sim-cf').value) || 0;
+      const horiz = parseFloat(document.getElementById('proj-filter-horizon').value) || 1;
+      
+      const imp = document.getElementById('proj-filter-impact').value;
+      const mult = imp === 'HIGH' ? 1.12 : (imp === 'MED' ? 1.05 : 1.0);
+
+      // Aplica a inflação APENAS nos custos
+      const cvu = cvuBase * mult;
+      const cf = (cfBase * mult) * horiz; // O Fixo Mensal base multiplica pela inflação e pelo horizonte
+
+      const alertEl = document.getElementById('sim-alert-margin');
+      let inviavel = false;
+
+      // BASE
+      const bRec = price * qty * horiz;
+      const bCost = (cvu * qty * horiz) + cf;
+      const bProfit = bRec - bCost;
+      const bBE = (price - cvu) > 0 ? Math.ceil((cfBase * mult) / (price - cvu)) : 'Inviável';
+      if(price - cvu <= 0) inviavel = true;
+
+      // PESSIMISTA (-15% Vendas em Unidades)
+      const pQty = qty * 0.85;
+      const pRec = price * pQty * horiz;
+      const pCost = (cvu * pQty * horiz) + cf;
+      const pProfit = pRec - pCost;
+      const pBE = bBE; // Break-even operacional é o mesmo, pois preço e cvu não mudam no cenário
+
+      // OTIMISTA (+10% Qtd, +5% Preço)
+      const oQty = qty * 1.10;
+      const oPrice = price * 1.05;
+      const oRec = oPrice * oQty * horiz;
+      const oCost = (cvu * oQty * horiz) + cf;
+      const oProfit = oRec - oCost;
+      const oBE = (oPrice - cvu) > 0 ? Math.ceil((cfBase * mult) / (oPrice - cvu)) : 'Inviável';
+
+      // Atualiza DOM
+      document.getElementById('base-rec').innerText = fmtBRL(bRec);
+      document.getElementById('base-cost').innerText = fmtBRL(bCost);
+      document.getElementById('base-profit').innerText = fmtBRL(bProfit);
+      document.getElementById('base-be').innerText = bBE !== 'Inviável' ? `${bBE} un/mês` : 'Inv.';
+
+      document.getElementById('pes-rec').innerText = fmtBRL(pRec);
+      document.getElementById('pes-cost').innerText = fmtBRL(pCost);
+      document.getElementById('pes-profit').innerText = fmtBRL(pProfit);
+      document.getElementById('pes-be').innerText = pBE !== 'Inviável' ? `${pBE} un/mês` : 'Inv.';
+
+      document.getElementById('oti-rec').innerText = fmtBRL(oRec);
+      document.getElementById('oti-cost').innerText = fmtBRL(oCost);
+      document.getElementById('oti-profit').innerText = fmtBRL(oProfit);
+      document.getElementById('oti-be').innerText = oBE !== 'Inviável' ? `${oBE} un/mês` : 'Inv.';
+
+      if(inviavel) alertEl.classList.remove('hidden'); else alertEl.classList.add('hidden');
+
+      atualizaScenChart([pRec, bRec, oRec], [pCost, bCost, oCost]);
+    }
+
+    function atualizaScenChart(receitas, custos) {
+       const ctx = document.getElementById('scenarioChart');
+       if(!ctx) return;
+       if(scenChartInst) scenChartInst.destroy();
+
+       scenChartInst = new Chart(ctx, {
+          type: 'bar',
+          data: {
+             labels: ['Pessimista', 'Base', 'Otimista'],
+             datasets: [
+                { label: 'Receita Total', data: receitas, backgroundColor: '#34d399', borderRadius: 4 },
+                { label: 'Custo Total', data: custos, backgroundColor: '#f87171', borderRadius: 4 }
+             ]
+          },
+          options: {
+             responsive: true, maintainAspectRatio: false,
+             scales: {
+                y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#1e293b' } },
+                x: { ticks: { color: '#94a3b8', font:{size:11, weight:'bold'} }, grid: { display:false } }
+             },
+             plugins: { legend: { labels: { color: '#cbd5e1' } } }
+          }
+       });
+    }
+
+    // ==========================================
+    // NAVEGAÇÃO SPA E UTILITÁRIOS GERAIS
+    // ==========================================
+    function navigatePage(pageId) {
+      ['page-audit', 'page-projection', 'page-cashflow'].forEach(p => document.getElementById(p).classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+
+      ['btn-nav-cashflow', 'btn-nav-audit', 'btn-nav-projection'].forEach(b => {
+        const btn = document.getElementById(b);
+        if (btn) btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 transition-all text-left font-semibold text-xs";
+      });
+
+      const activeBtn = { 'page-cashflow': 'btn-nav-cashflow', 'page-audit': 'btn-nav-audit', 'page-projection': 'btn-nav-projection' }[pageId];
+      if (document.getElementById(activeBtn)) {
+        document.getElementById(activeBtn).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-md transition-all text-left text-xs";
+      }
+
+      const t = { 'page-cashflow': 'Página 1: Fluxo de Caixa', 'page-audit': 'Página 2: Auditoria (100)', 'page-projection': 'Página 3: Simulador' };
+      document.getElementById('topbar-title').innerText = t[pageId];
+      
+      // Fecha sidebar no mobile ao clicar em um link
+      if(window.innerWidth < 768) {
+         document.getElementById('sidebar').classList.add('-translate-x-full');
+         document.getElementById('mobile-overlay').classList.add('hidden');
+      }
+    }
+
+    function toggleSidebar() {
+      const s = document.getElementById('sidebar');
+      const o = document.getElementById('mobile-overlay');
+      s.classList.toggle('-translate-x-full');
+      o.classList.toggle('hidden');
+    }
+
+    // Placeholder para o chat (blindado contra chamadas fake sem chave)
+    function toggleAgentChat() {
+       alert("O Agente IA Conversacional foi desativado temporariamente na visualização estática por motivos de segurança arquitetural (proteção de API Key). Ele roda integrado via Backend Serverless no ambiente de produção final.");
+    }
+
+    window.onload = function() {
+      init100AuditData();
+      filterAuditData();
+      recalculaSimulador();
+      initCashData();
+      navigatePage('page-cashflow');
+    };
+  </script>
+</body>
+</html>
